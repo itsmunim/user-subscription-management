@@ -7,10 +7,10 @@ function findUserByPhoneNum(users, phoneNum) {
   return found.length ? found[0] : null;
 }
 
-function createAndAssignOffer(users, offerDetails, type) {
+function createAndAssignOffer(users, offerDetails) {
   const offer = new Offer(
     offerDetails.partnerName,
-    type,
+    offerDetails.type,
     offerDetails.date,
     offerDetails.period ? offerDetails.period : null
   );
@@ -36,11 +36,7 @@ function run() {
   const users = dataService.prepareUsers();
 
   partnerData.offers.forEach((offerDetails) => {
-    if (offerDetails.period) {
-      createAndAssignOffer(users, offerDetails, 'grant');
-    } else {
-      createAndAssignOffer(users, offerDetails, 'revocation');
-    }
+    createAndAssignOffer(users, offerDetails);
   });
 
   console.log('Subscription status of all users', showSubscriptionInfo(users));

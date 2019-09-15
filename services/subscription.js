@@ -3,7 +3,7 @@ const constants = require('../common/constants');
 const logger = require('./log');
 
 function _getOffersForSimilarPartner(user, partner) {
-  return user.offers.filter(offer => offer.partner.name === partner.name);
+  return user.offers.filter(offer => offer.partner === partner);
 }
 
 function _isOverlapping(offerToCheckWithin, offerToCheck) {
@@ -27,6 +27,12 @@ function _performGrant(user, offer) {
   const lastOffer = user.offers[user.offers.length - 1];
   let isOfferWithinLast = false;
   let isLastFromSamePartner = false;
+
+  if (!offer.endDate) {
+    logger.log(`Invalid offer for ${user.name}, skipping`, offer);
+    return;
+  }
+
   if (lastOffer) {
     isOfferWithinLast = _isOverlapping(lastOffer, offer);
     isLastFromSamePartner = lastOffer.partner === offer.partner;

@@ -1,5 +1,6 @@
 const moment = require('moment');
 const constants = require('../common/constants');
+const logger = require('./log');
 
 function _getOffersForSimilarPartner(user, partner) {
   return user.offers.filter(offer => offer.partner.name === partner.name);
@@ -31,20 +32,26 @@ function _performGrant(user, offer) {
     isLastFromSamePartner = lastOffer.partner === offer.partner;
   }
 
+  logger.log(`New offer for ${user.name}`, offer);
+
   if (!user.offers.length || !isOfferWithinLast) {
     // if offer startdate is not in between last offer or the offer
     // list is empty, simply push it
     user.offers.push(offer);
-    console.log('New offer, stacking', offer);
+    logger.log(`Offer added for ${user.name}`, offer);
     return;
   }
 
   if (isLastFromSamePartner && isOfferWithinLast) {
-    const diff = moment(offer.startDate).diff(moment(offer.endDate), 'months');
+    const diff = moment(offer.endDate).diff(moment(offer.startDate), 'months');
+    logger.log(`Extending offer for ${user.name} from same partner`, 'current offer', lastOffer, 'extension offer', offer);
     lastOffer.endDate = moment(lastOffer.endDate)
       .add(diff, 'months').format(constants.DATE_FORMAT);
-    console.log('Extending offer from same partner', lastOffer);
+    logger.log(`Offer for ${user.name} after extension`, lastOffer);
+    return;
   }
+
+  logger.log(`Already an offer active for ${user.name} in conflicting time range, ignoring`, offer);
 }
 
 function _performRevoke(user, offer) {
@@ -53,10 +60,13 @@ function _performRevoke(user, offer) {
 
   if (offersContainingRevokationDate.length) {
     const offerToUpdate = offersContainingRevokationDate[0];
-    console.log('Revoking offer', offerToUpdate);
+    logger.log(`Revoking offer for ${user.name}`, offerToUpdate);
     offerToUpdate.endDate = offer.startDate;
-    console.log('Updated offer after revocation', offerToUpdate);
+    logger.log(`Updated offer after revocation for ${user.name}`, offerToUpdate);
+    return;
   }
+
+  logger.log(`Revocation offer is not valid for ${user.name}, skipping`);
 }
 
 module.exports = {
